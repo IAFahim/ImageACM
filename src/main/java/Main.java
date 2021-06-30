@@ -14,13 +14,23 @@ class Info {
 
 class Data {
     public String team, quote, name;
+
+    public Data() {
+
+    }
+
+    public Data(String team, String quote, String name) {
+        this.name = name;
+        this.quote = quote;
+        this.team = team;
+    }
 }
 
 public class Main {
     private static int totalCreated = 0;
     private static int totalInClass = 0;
-    private static String imgPath, infoPath, currentDirectory;
-    private static Info teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info(), imageInfo = new Info();
+    private static String imgPath, infoPath, imageType;
+    private static Info teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info();
     private static ArrayList<Data> datas = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -32,6 +42,7 @@ public class Main {
             imgPath = "img.png";
             infoPath = "imgINFO.txt";
         }
+        imageType = imgPath.substring(imgPath.lastIndexOf('.') + 1);
         build();
         System.out.println(System.currentTimeMillis() - x);
     }
@@ -39,6 +50,7 @@ public class Main {
     public static void build() {
         try {
             Scanner sc = new Scanner(new FileReader(infoPath));
+            imageMain = ImageIO.read(new File(imgPath));
             boolean hasInformation = false;
             while (sc.hasNextLine()) {
                 String str = sc.nextLine();
@@ -52,8 +64,10 @@ public class Main {
                     infoFinder(str);
                 }
             }
-        } catch (FileNotFoundException e) {
+            createImage();
+        } catch (IOException e) {
             e.printStackTrace();
+            exit("SomeThingWent Really wrong");
         }
     }
 
@@ -82,7 +96,6 @@ public class Main {
             case 't' -> teamInfo = info;
             case 'q' -> quoteInfo = info;
             case 'n' -> nameInfo = info;
-            case 'm' -> imageInfo = info;
         }
     }
 
@@ -91,24 +104,15 @@ public class Main {
             exit(str);
         }
         double x = Double.parseDouble(str.substring(1));
-
-        if (imageInfo.x == 0 || imageInfo.y == 0) {
-            if (x == (int) x) {
-                return (int) x;
+        if ((int) x >= 1 || x == (int) x) {
+            return (int) x;
+        } else {
+            if (str.charAt(0) == 'x') {
+                return (int) (x * imageMain.getWidth());
+            } else if (str.charAt(0) == 'y') {
+                return (int) (x * imageMain.getHeight());
             } else {
                 exit(str);
-            }
-        } else {
-            if ((int)x >= 1 || x == (int) x) {
-                return (int) x;
-            } else {
-                if (str.charAt(0) == 'x') {
-                    return (int) (x * imageInfo.x);
-                } else if (str.charAt(0) == 'y') {
-                    return (int) (x * imageInfo.y);
-                } else {
-                    exit(str);
-                }
             }
         }
         return 0;
@@ -120,6 +124,7 @@ public class Main {
         System.err.println("Error at " + str);
         System.exit(-1);
     }
+
 
     static Data currentData = new Data();
 
@@ -133,7 +138,6 @@ public class Main {
                     subStr = str.substring(3);
                     currentData.team = subStr;
                     System.out.println(subStr);
-//                    makeDirectory(subStr);
                 }
                 case 'q' -> {
                     subStr = str.substring(3);
@@ -142,71 +146,64 @@ public class Main {
             }
         } else {
             System.out.println(++totalInClass + ", " + str);
-            currentData.name = str;
             totalCreated++;
-            datas.add(currentData);
-//            createFile(str);
+            datas.add(new Data(currentData.team, currentData.quote, str));
         }
     }
 
     static BufferedImage imageMain;
 
     public static void createImage() {
-        try {
-            imageMain = ImageIO.read(new File(imgPath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         ExecutorService executorService = Executors.newCachedThreadPool();
-        for (Data data : datas) {
+        for (int i = 0; i < datas.size(); i++) {
+            int finalI = i;
             executorService.submit(() -> {
+                Data data = datas.get(finalI);
                 BufferedImage image = copyImage(imageMain);
                 if (data.team != null) {
                     Graphics2D g = (Graphics2D) image.getGraphics();
-                    Font font = new Font(teamInfo.font, Font.PLAIN, teamInfo.size);
-                    g.setFont(font);
-                    g.setColor(Color.BLACK);
+                    g.setFont(new Font(teamInfo.font, Font.PLAIN, teamInfo.size));
+                    g.setColor(teamInfo.color);
                     String text = data.team;
-                    TextLayout textLayout = new TextLayout(text, font, g.getFontRenderContext());
+                    TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
                     double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
                     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-                    g.drawString(text, image.getWidth() / 2 - (int) textWidth / 2, teamInfo.y);
+                    g.drawString(text, teamInfo.x - (int) textWidth / 2, teamInfo.y + (int) textHeight / 2);
                     g.dispose();
                 }
 
                 if (data.quote != null) {
-
+                    Graphics2D g = (Graphics2D) image.getGraphics();
+                    g.setFont(new Font(quoteInfo.font, Font.PLAIN, quoteInfo.size));
+                    g.setColor(quoteInfo.color);
+                    String text = data.quote;
+                    TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
+                    double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
+                    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                    g.drawString(text, quoteInfo.x - (int) textWidth / 2, quoteInfo.y + (int) textHeight / 2);
+                    g.dispose();
                 }
 
                 if (data.name != null) {
-
+                    Graphics2D g = (Graphics2D) image.getGraphics();
+                    g.setFont(new Font(nameInfo.font, Font.PLAIN, nameInfo.size));
+                    g.setColor(nameInfo.color);
+                    String text = data.name;
+                    TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
+                    double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
+                    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                    g.drawString(text, nameInfo.x - (int) textWidth / 2, nameInfo.y + (int) textHeight / 2);
+                    g.dispose();
                 }
-
+                new File(data.team).mkdirs();
                 try {
-                    ImageIO.write(image, "png", new File(data.team + "/" + data.name));
+                    ImageIO.write(image, imageType, new File(data.team + "\\" + data.name + "." + imageType));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
         }
-
-        //cleaning
-        totalInClass = 0;
-        datas.clear();
-    }
-
-    public static void makeDirectory(String str) {
-        new File(str).mkdirs();
-        currentDirectory = str;
-    }
-
-
-    public static void createFile(String str) {
-        try {
-            new File(currentDirectory + "/" + str).createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        executorService.shutdown();
     }
 
 

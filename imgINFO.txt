@@ -1,9 +1,9 @@
--m x1124 y794
--t x630 y475 w360 h17 #ffffff
--n x562 y380 s124 w625 h127 fPalace_Script_MT #353535
+-s x.85 y.3 tNSUACSC-20302xx #000000 fPalace_Script_MT
+-t x630 y475 s124 #000000 fPalace_Script_MT
+-n x562 y380 s124 fPalace_Script_MT #353535
 
 -t Promotions
 Ishtiaq Ahamed Fahim
-Nasir Sha
--t Probation
 Noor
+-t Probation
+Nasir Sha
