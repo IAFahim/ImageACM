@@ -1,7 +1,3 @@
-import ij.IJ;
-import ij.ImagePlus;
-import ij.process.ImageProcessor;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.font.TextLayout;

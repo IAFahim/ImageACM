@@ -20,7 +20,7 @@ public class Main {
     private static int totalCreated = 0;
     private static int totalInClass = 0;
     private static String imgPath, infoPath, currentDirectory;
-    private static Info teamInfo, quoteInfo, nameInfo;
+    private static Info teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info(), imageInfo = new Info();
     private static ArrayList<Data> datas = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -65,8 +65,8 @@ public class Main {
             for (int i = 1; i < arr.length; i++) {
                 if (arr[i].length() > 0)
                     switch (arr[i].charAt(0)) {
-                        case 'x' -> info.x = Integer.parseInt(arr[i].substring(1));
-                        case 'y' -> info.y = Integer.parseInt(arr[i].substring(1));
+                        case 'x' -> info.x = doubleCast(arr[i]);
+                        case 'y' -> info.y = doubleCast(arr[i]);
                         case 'w' -> info.width = Integer.parseInt(arr[i].substring(1));
                         case 'h' -> info.height = Integer.parseInt(arr[i].substring(1));
                         case 's' -> info.size = Integer.parseInt(arr[i].substring(1));
@@ -82,7 +82,43 @@ public class Main {
             case 't' -> teamInfo = info;
             case 'q' -> quoteInfo = info;
             case 'n' -> nameInfo = info;
+            case 'm' -> imageInfo = info;
         }
+    }
+
+    private static int doubleCast(String str) {
+        if (!Character.isLetter(str.charAt(0))) {
+            exit(str);
+        }
+        double x = Double.parseDouble(str.substring(1));
+
+        if (imageInfo.x == 0 || imageInfo.y == 0) {
+            if (x == (int) x) {
+                return (int) x;
+            } else {
+                exit(str);
+            }
+        } else {
+            if ((int)x >= 1 || x == (int) x) {
+                return (int) x;
+            } else {
+                if (str.charAt(0) == 'x') {
+                    return (int) (x * imageInfo.x);
+                } else if (str.charAt(0) == 'y') {
+                    return (int) (x * imageInfo.y);
+                } else {
+                    exit(str);
+                }
+            }
+        }
+        return 0;
+
+
+    }
+
+    static void exit(String str) {
+        System.err.println("Error at " + str);
+        System.exit(-1);
     }
 
     static Data currentData = new Data();
@@ -97,7 +133,7 @@ public class Main {
                     subStr = str.substring(3);
                     currentData.team = subStr;
                     System.out.println(subStr);
-                    makeDirectory(subStr);
+//                    makeDirectory(subStr);
                 }
                 case 'q' -> {
                     subStr = str.substring(3);
@@ -114,7 +150,7 @@ public class Main {
     }
 
     static BufferedImage imageMain;
-    
+
     public static void createImage() {
         try {
             imageMain = ImageIO.read(new File(imgPath));
