@@ -235,7 +235,7 @@ public class Main {
                     Graphics2D g = (Graphics2D) image.getGraphics();
                     g.setFont(new Font(serialInfo.font, Font.PLAIN, serialInfo.size));
                     g.setColor(serialInfo.color);
-                    String text = serial(totalCreated);
+                    String text = serial((finalI+1));
                     TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
                     double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
                     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
