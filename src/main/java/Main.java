@@ -35,7 +35,7 @@ class Data {
 }
 
 public class Main {
-    private static int totalCreated = 1;
+    private static int totalCreated = 0;
     private static int totalInClass = 0;
     private static String imgPath, infoPath, imageType;
     private static Info serialInfo = new Info(), barcodeInfo = new Info(), teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info();
@@ -55,12 +55,14 @@ public class Main {
         System.out.println(System.currentTimeMillis() - x);
     }
 
+    private static PrintWriter printWriter;
+
     public static void build() {
         try {
             Scanner sc = new Scanner(new FileReader(infoPath));
             imageMain = ImageIO.read(new File(imgPath));
             qrCodeWriter = new QRCodeWriter();
-
+            printWriter = new PrintWriter(new FileWriter("Csv.csv"));
             boolean hasInformation = false;
             while (sc.hasNextLine()) {
                 String str = sc.nextLine();
@@ -75,6 +77,7 @@ public class Main {
                 }
             }
             createImage();
+            printWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
             exit("SomeThingWent Really wrong");
@@ -173,6 +176,8 @@ public class Main {
                     subStr = str.substring(3);
                     currentData.team = subStr;
                     System.out.println(subStr);
+                    printWriter.write(subStr + ",Name,Serial\n");
+                    totalInClass = 0;
                 }
                 case 'q' -> {
                     subStr = str.substring(3);
@@ -180,7 +185,10 @@ public class Main {
                 }
             }
         } else {
-            System.out.println(++totalInClass + ", " + str);
+            totalCreated++;
+            String st = (++totalInClass) + "," + str +","+ serial(totalCreated);
+            System.out.println("\t" + st);
+            printWriter.write(st + "\n");
             datas.add(new Data(currentData.team, currentData.quote, str));
         }
     }
@@ -189,7 +197,7 @@ public class Main {
     static QRCodeWriter qrCodeWriter;
 
     public static void createImage() {
-        ExecutorService executorService = Executors.newCachedThreadPool();
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < datas.size(); i++) {
             int finalI = i;
             executorService.submit(() -> {
@@ -235,7 +243,7 @@ public class Main {
                     Graphics2D g = (Graphics2D) image.getGraphics();
                     g.setFont(new Font(serialInfo.font, Font.PLAIN, serialInfo.size));
                     g.setColor(serialInfo.color);
-                    String text = serial((finalI+1));
+                    String text = serial((finalI + 1));
                     TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
                     double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
                     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
@@ -247,13 +255,13 @@ public class Main {
                 if (barcodeInfo.text != null) {
                     StringBuilder sb = new StringBuilder(barcodeInfo.text);
                     if (data.name != null) {
-                        sb.append(","+data.name);
+                        sb.append("," + data.name);
                     }
                     if (data.team != null) {
-                        sb.append(","+data.team);
+                        sb.append("," + data.team);
                     }
                     if (data.quote != null) {
-                        sb.append(","+data.quote);
+                        sb.append("," + data.quote);
                     }
                     if (barcodeInfo.x == 0 || barcodeInfo.y == 0 || barcodeInfo.height == 0 || barcodeInfo.width == 0) {
                         exit("Barcode Problem");
@@ -261,14 +269,13 @@ public class Main {
 
                     BufferedImage bufferedImage = qrCodeImage(sb.toString(), barcodeInfo.width, barcodeInfo.height);
                     Graphics2D g = (Graphics2D) image.getGraphics();
-                    g.drawImage(bufferedImage, barcodeInfo.x-(barcodeInfo.width/2), barcodeInfo.y-(barcodeInfo.height/2), null);
+                    g.drawImage(bufferedImage, barcodeInfo.x - (barcodeInfo.width / 2), barcodeInfo.y - (barcodeInfo.height / 2), null);
                     g.dispose();
                 }
 
                 new File(data.team).mkdirs();
                 try {
                     ImageIO.write(image, imageType, new File(data.team + "\\" + data.name + "." + imageType));
-                    totalCreated++;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
