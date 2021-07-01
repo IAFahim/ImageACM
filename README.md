@@ -46,6 +46,7 @@ Tasked to create Structured image, Multithread support, Serial support, CSV with
     y
     h
     w
+    s
     f
     #
     t
