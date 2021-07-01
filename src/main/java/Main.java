@@ -1,3 +1,10 @@
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+
+import java.text.DecimalFormat;
 import java.util.*;
 import java.io.*;
 import java.awt.*;
@@ -10,6 +17,7 @@ class Info {
     public int x = 0, y = 0, width = 0, height = 0, size = 0;
     public Color color = Color.black;
     public String font = "Arial";
+    public String text = null;
 }
 
 class Data {
@@ -27,10 +35,10 @@ class Data {
 }
 
 public class Main {
-    private static int totalCreated = 0;
+    private static int totalCreated = 1;
     private static int totalInClass = 0;
     private static String imgPath, infoPath, imageType;
-    private static Info teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info();
+    private static Info serialInfo = new Info(), barcodeInfo = new Info(), teamInfo = new Info(), quoteInfo = new Info(), nameInfo = new Info();
     private static ArrayList<Data> datas = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -51,6 +59,8 @@ public class Main {
         try {
             Scanner sc = new Scanner(new FileReader(infoPath));
             imageMain = ImageIO.read(new File(imgPath));
+            qrCodeWriter = new QRCodeWriter();
+
             boolean hasInformation = false;
             while (sc.hasNextLine()) {
                 String str = sc.nextLine();
@@ -85,17 +95,22 @@ public class Main {
                         case 'h' -> info.height = Integer.parseInt(arr[i].substring(1));
                         case 's' -> info.size = Integer.parseInt(arr[i].substring(1));
                         case 'f' -> info.font = arr[i].substring(1).replaceAll("_", " ");
+                        case 't' -> info.text = arr[i].substring(1).replaceAll("_", " ");
                         case '#' -> info.color = Color.decode(arr[i]);
                         default -> System.err.println("Error at:" + arr[i]);
                     }
             }
-
         }
         c = Character.toLowerCase(str.charAt(1));
         switch (c) {
             case 't' -> teamInfo = info;
             case 'q' -> quoteInfo = info;
             case 'n' -> nameInfo = info;
+            case 'b' -> barcodeInfo = info;
+            case 's' -> {
+                serialInfo = info;
+                canHoldInSerial = at(serialInfo.text);
+            }
         }
     }
 
@@ -116,7 +131,27 @@ public class Main {
             }
         }
         return 0;
+    }
 
+    public static int canHoldInSerial;
+
+    private static int at(String str) {
+        int at = str.length() - 1;
+        for (int i = at; str.charAt(i) == '#'; i--) {
+            at = i;
+        }
+        return at;
+    }
+
+    public static String serial(int n) {
+        String str = serialInfo.text;
+        int gap = str.length() - canHoldInSerial;
+        int len = (n + "").length();
+        if (len < gap) {
+            return str.substring(0, canHoldInSerial) + "0".repeat(len) + n;
+        } else {
+            return str.substring(0, canHoldInSerial) + n;
+        }
 
     }
 
@@ -146,12 +181,12 @@ public class Main {
             }
         } else {
             System.out.println(++totalInClass + ", " + str);
-            totalCreated++;
             datas.add(new Data(currentData.team, currentData.quote, str));
         }
     }
 
     static BufferedImage imageMain;
+    static QRCodeWriter qrCodeWriter;
 
     public static void createImage() {
         ExecutorService executorService = Executors.newCachedThreadPool();
@@ -195,9 +230,45 @@ public class Main {
                     g.drawString(text, nameInfo.x - (int) textWidth / 2, nameInfo.y + (int) textHeight / 2);
                     g.dispose();
                 }
+
+                if (serialInfo.text != null) {
+                    Graphics2D g = (Graphics2D) image.getGraphics();
+                    g.setFont(new Font(serialInfo.font, Font.PLAIN, serialInfo.size));
+                    g.setColor(serialInfo.color);
+                    String text = serial(totalCreated);
+                    TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
+                    double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
+                    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                    g.drawString(text, serialInfo.x - (int) textWidth / 2, serialInfo.y + (int) textHeight / 2);
+
+                    g.dispose();
+                }
+
+                if (barcodeInfo.text != null) {
+                    StringBuilder sb = new StringBuilder(barcodeInfo.text);
+                    if (data.name != null) {
+                        sb.append(","+data.name);
+                    }
+                    if (data.team != null) {
+                        sb.append(","+data.team);
+                    }
+                    if (data.quote != null) {
+                        sb.append(","+data.quote);
+                    }
+                    if (barcodeInfo.x == 0 || barcodeInfo.y == 0 || barcodeInfo.height == 0 || barcodeInfo.width == 0) {
+                        exit("Barcode Problem");
+                    }
+
+                    BufferedImage bufferedImage = qrCodeImage(sb.toString(), barcodeInfo.width, barcodeInfo.height);
+                    Graphics2D g = (Graphics2D) image.getGraphics();
+                    g.drawImage(bufferedImage, barcodeInfo.x-(barcodeInfo.width/2), barcodeInfo.y-(barcodeInfo.height/2), null);
+                    g.dispose();
+                }
+
                 new File(data.team).mkdirs();
                 try {
                     ImageIO.write(image, imageType, new File(data.team + "\\" + data.name + "." + imageType));
+                    totalCreated++;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -206,6 +277,17 @@ public class Main {
         executorService.shutdown();
     }
 
+    public static BufferedImage qrCodeImage(String str, int width, int height) {
+
+        BitMatrix bitMatrix = null;
+        try {
+            bitMatrix = qrCodeWriter.encode(str, BarcodeFormat.QR_CODE, width, height);
+        } catch (WriterException e) {
+            e.printStackTrace();
+            exit(str);
+        }
+        return MatrixToImageWriter.toBufferedImage(bitMatrix);
+    }
 
     public static BufferedImage copyImage(BufferedImage source) {
         BufferedImage bi = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());

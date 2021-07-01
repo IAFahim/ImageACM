@@ -1,6 +1,7 @@
--s x.85 y.3 tNSUACSC-20302xx #000000 fPalace_Script_MT
--t x630 y475 s124 #000000 fPalace_Script_MT
--n x562 y380 s124 fPalace_Script_MT #353535
+-s s20 x.8354 y.2276 tNSUACSC-20302## #000000 fEconomica
+-b x.08585 y.629 h66 w66 tACM
+-t x680 y.5982 s20 fMontserrat #ffffff
+-n x.5 y.4785 s124 fPalace_Script_MT #353535
 
 -t Promotions
 Ishtiaq Ahamed Fahim
