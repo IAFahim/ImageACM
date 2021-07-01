@@ -52,7 +52,7 @@ public class Main {
         }
         imageType = imgPath.substring(imgPath.lastIndexOf('.') + 1);
         build();
-        System.out.println(System.currentTimeMillis() - x);
+        System.out.println("\nFinished in: "+ (System.currentTimeMillis() - x)+"ms");
     }
 
     private static PrintWriter printWriter;
