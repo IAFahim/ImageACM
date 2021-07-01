@@ -4,7 +4,6 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
-import java.text.DecimalFormat;
 import java.util.*;
 import java.io.*;
 import java.awt.*;
@@ -255,13 +254,13 @@ public class Main {
                 if (barcodeInfo.text != null) {
                     StringBuilder sb = new StringBuilder(barcodeInfo.text);
                     if (data.name != null) {
-                        sb.append("," + data.name);
+                        sb.append(",").append(data.name);
                     }
                     if (data.team != null) {
-                        sb.append("," + data.team);
+                        sb.append(",").append(data.team);
                     }
                     if (data.quote != null) {
-                        sb.append("," + data.quote);
+                        sb.append(",").append(data.quote);
                     }
                     if (barcodeInfo.x == 0 || barcodeInfo.y == 0 || barcodeInfo.height == 0 || barcodeInfo.width == 0) {
                         exit("Barcode Problem");
@@ -273,7 +272,7 @@ public class Main {
                     g.dispose();
                 }
 
-                new File(data.team).mkdirs();
+                new File(Objects.requireNonNull(data.team)).mkdirs();
                 try {
                     ImageIO.write(image, imageType, new File(data.team + "\\" + data.name + "." + imageType));
                 } catch (IOException e) {
@@ -293,7 +292,7 @@ public class Main {
             e.printStackTrace();
             exit(str);
         }
-        return MatrixToImageWriter.toBufferedImage(bitMatrix);
+        return MatrixToImageWriter.toBufferedImage(Objects.requireNonNull(bitMatrix));
     }
 
     public static BufferedImage copyImage(BufferedImage source) {
