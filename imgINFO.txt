@@ -1,10 +1,10 @@
 -s s20 x.8354 y.2276 tNSUACSC-20302## #000000 fEconomica
 -b x.08585 y.629 h66 w66 tACM
 -t x680 y.5982 s20 fMontserrat #ffffff
--n x.5 y.4785 s124 fPalace_Script_MT #353535
+-n x.5 y.4785 s124 fPalace-Script-MT #353535
 
 -t Promotions
-Ishtiaq Ahamed Fahim
+Ishtiaq Ahamed Fahim    ishtiaq.fahim@northsouth.edu
 Noor
 -t Probation
 Nasir Sha

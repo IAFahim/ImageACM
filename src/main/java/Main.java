@@ -16,20 +16,40 @@ class Info {
     public int x = 0, y = 0, width = 0, height = 0, size = 0;
     public Color color = Color.black;
     public String font = "Arial";
-    public String text = null;
+    public String text;
 }
 
 class Data {
     public String team, quote, name;
+    public StringBuilder barcodeStore;
 
     public Data() {
 
     }
 
     public Data(String team, String quote, String name) {
-        this.name = name;
+        this.name = barcodeFeedRemover(name);
         this.quote = quote;
         this.team = team;
+    }
+
+    public String barcodeFeedRemover(String string) {
+        String str = string.trim().replaceAll(" {4}", "\t");
+        int index = str.indexOf('\t');
+        barcodeStore = new StringBuilder(str.length() - index);
+        if (index > 0) {
+            int tab = index + 1;
+            for (int i = tab; i < str.length(); i++) {
+                if (str.charAt(i) == '\t') {
+                    barcodeStore.append(str.substring(tab, i)).append(',');
+                    tab = i + 1;
+                }
+            }
+            barcodeStore.append(str.substring(tab));
+            return str.substring(0, index);
+        } else {
+            return string;
+        }
     }
 }
 
@@ -51,7 +71,7 @@ public class Main {
         }
         imageType = imgPath.substring(imgPath.lastIndexOf('.') + 1);
         build();
-        System.out.println("\nFinished in: "+ (System.currentTimeMillis() - x)+"ms");
+        System.out.println("\nFinished in: " + (System.currentTimeMillis() - x) + "ms");
     }
 
     private static PrintWriter printWriter;
@@ -87,17 +107,17 @@ public class Main {
         char c = 'n';
         Info info = new Info();
         if (str.length() > 2 && str.charAt(0) == '-') {
-            String[] arr = str.split(" ");
+            String[] arr = str.split("\\s+");
             for (int i = 1; i < arr.length; i++) {
                 if (arr[i].length() > 0)
                     switch (arr[i].charAt(0)) {
                         case 'x' -> info.x = doubleCast(arr[i]);
                         case 'y' -> info.y = doubleCast(arr[i]);
-                        case 'w' -> info.width = Integer.parseInt(arr[i].substring(1));
-                        case 'h' -> info.height = Integer.parseInt(arr[i].substring(1));
-                        case 's' -> info.size = Integer.parseInt(arr[i].substring(1));
-                        case 'f' -> info.font = arr[i].substring(1).replaceAll("_", " ");
-                        case 't' -> info.text = arr[i].substring(1).replaceAll("_", " ");
+                        case 'w' -> info.width = doubleCast(arr[i]);
+                        case 'h' -> info.height = doubleCast(arr[i]);
+                        case 's' -> info.size = doubleCast(arr[i]);
+                        case 'f' -> info.font = arr[i].substring(1).replaceAll("-", " ");
+                        case 't' -> info.text = arr[i].substring(1);
                         case '#' -> info.color = Color.decode(arr[i]);
                         default -> System.err.println("Error at:" + arr[i]);
                     }
@@ -126,7 +146,7 @@ public class Main {
         } else {
             if (str.charAt(0) == 'x') {
                 return (int) (x * imageMain.getWidth());
-            } else if (str.charAt(0) == 'y') {
+            } else if (str.charAt(0) == 'y' || str.charAt(0) == 's') {
                 return (int) (x * imageMain.getHeight());
             } else {
                 exit(str);
@@ -175,7 +195,11 @@ public class Main {
                     subStr = str.substring(3);
                     currentData.team = subStr;
                     System.out.println(subStr);
-                    printWriter.write(subStr + ",Name,Serial\n");
+                    StringBuilder sb = new StringBuilder(subStr + ",Name");
+                    if (serialInfo.text != null) {
+                        sb.append(",Serial");
+                    }
+                    printWriter.write(subStr + sb.toString() + "\n");
                     totalInClass = 0;
                 }
                 case 'q' -> {
@@ -184,11 +208,15 @@ public class Main {
                 }
             }
         } else {
+            Data temp = new Data(currentData.team, currentData.quote, str);
+            datas.add(temp);
             totalCreated++;
-            String st = (++totalInClass) + "," + str +","+ serial(totalCreated);
-            System.out.println("\t" + st);
-            printWriter.write(st + "\n");
-            datas.add(new Data(currentData.team, currentData.quote, str));
+            StringBuilder sb = new StringBuilder((++totalInClass) + "," + temp.name);
+            if (serialInfo.text != null) {
+                sb.append("," + serial(totalCreated));
+            }
+            System.out.println("\t" + sb.toString());
+            printWriter.write(sb.toString() + "\n");
         }
     }
 
@@ -237,16 +265,16 @@ public class Main {
                     g.drawString(text, nameInfo.x - (int) textWidth / 2, nameInfo.y + (int) textHeight / 2);
                     g.dispose();
                 }
-
+                String serial = null;
                 if (serialInfo.text != null) {
                     Graphics2D g = (Graphics2D) image.getGraphics();
                     g.setFont(new Font(serialInfo.font, Font.PLAIN, serialInfo.size));
                     g.setColor(serialInfo.color);
-                    String text = serial((finalI + 1));
-                    TextLayout textLayout = new TextLayout(text, g.getFont(), g.getFontRenderContext());
+                    serial = serial((finalI + 1));
+                    TextLayout textLayout = new TextLayout(serial, g.getFont(), g.getFontRenderContext());
                     double textHeight = textLayout.getBounds().getHeight(), textWidth = textLayout.getBounds().getWidth();
                     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-                    g.drawString(text, serialInfo.x - (int) textWidth / 2, serialInfo.y + (int) textHeight / 2);
+                    g.drawString(serial, serialInfo.x - (int) textWidth / 2, serialInfo.y + (int) textHeight / 2);
 
                     g.dispose();
                 }
@@ -255,6 +283,7 @@ public class Main {
                     StringBuilder sb = new StringBuilder(barcodeInfo.text);
                     if (data.name != null) {
                         sb.append(",").append(data.name);
+
                     }
                     if (data.team != null) {
                         sb.append(",").append(data.team);
@@ -262,8 +291,17 @@ public class Main {
                     if (data.quote != null) {
                         sb.append(",").append(data.quote);
                     }
+
                     if (barcodeInfo.x == 0 || barcodeInfo.y == 0 || barcodeInfo.height == 0 || barcodeInfo.width == 0) {
                         exit("Barcode Problem");
+                    }
+
+                    if (serial != null) {
+                        sb.append(",").append(serial);
+                    }
+
+                    if (data.barcodeStore.length()>0) {
+                        sb.append(",").append(data.barcodeStore);
                     }
 
                     BufferedImage bufferedImage = qrCodeImage(sb.toString(), barcodeInfo.width, barcodeInfo.height);
