@@ -3,13 +3,13 @@
 Tasked to create Structured image, Multithread support, Serial support, CSV with serial, Barcode support, scalable (x,y)
 coordinate support, uses font in system, only need to get the barcode library else is java library.
 
-##Required Info
+## Required Info
 `image`, `imgINFO.txt`
 
-###Would Generate
+### Would Generate
 `folder`, `image`, `CSV.csv`
 
-####Note: if not provided with command line argument of `image Name` And `infoInfo` it would look for `img.xxx` `imgInfo.txt` in current directory
+#### Note: if not provided with command line argument of `image Name` And `infoInfo` it would look for `img.xxx` `imgInfo.txt` in current directory
 
 **Structure:**
 
